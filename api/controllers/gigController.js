@@ -8,7 +8,7 @@ const createGig = async (req, res) => {
       .json({ message: "Please provide data to create new gig" });
   }
   const { title, description, budget } = req.body;
-  if (!title || !description || !budget) {
+  if (!title.trim() || !description.trim() || !budget.trim()) {
     return res
       .status(400)
       .json({ message: "Please provide all require field" });
