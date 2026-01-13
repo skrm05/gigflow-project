@@ -1,4 +1,7 @@
 node_modules/
+api/node_modules/
+frontend/node_modules/
 .env
+api/.env
 dist/
 .DS_Store
