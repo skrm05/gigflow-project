@@ -4,11 +4,11 @@ import jwt from "jsonwebtoken";
 
 const registerUser = async (req, res) => {
   if (!req.body) {
-    return res.status(400).json({ message: "User's data require" });
+    return res.status(400).json({ message: "User's data required" });
   }
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
-    return res.status(400).json({ message: "All fields are require" });
+    return res.status(400).json({ message: "All fields are required" });
   }
   try {
     const userExists = await User.findOne({ email });
@@ -27,10 +27,16 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
+      // Generate token immediately
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "30d",
+      });
+
       res.status(201).json({
         _id: user._id,
         name: user.name,
         email: user.email,
+        token: token, // Send token to frontend
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -42,13 +48,11 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
   if (!req.body) {
-    return res
-      .status(400)
-      .json({ message: "User's data require to perform login" });
+    return res.status(400).json({ message: "User's data required" });
   }
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: "All fields are require" });
+    return res.status(400).json({ message: "All fields are required" });
   }
   try {
     const user = await User.findOne({ email });
@@ -56,22 +60,23 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "User is not registered" });
     }
     let comparePsw = await bcrypt.compare(password, user.password);
+
     if (user && comparePsw) {
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
         expiresIn: "7d",
       });
-
       res.cookie("jwt", token, {
         httpOnly: true,
         secure: true,
         sameSite: "none",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
+        token: token,
       });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
